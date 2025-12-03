@@ -1,0 +1,86 @@
+{
+  "info": {
+    "name": "Antiplagiarism System",
+    "_postman_id": "00000000-0000-0000-0000-000000000001",
+    "description": "Коллекция запросов к системе антиплагиата (API Gateway).",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Health - API Gateway",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/healthz",
+          "host": ["{{baseUrl}}"],
+          "path": ["healthz"]
+        }
+      }
+    },
+    {
+      "name": "Upload Work",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "body": {
+          "mode": "formdata",
+          "formdata": [
+            {
+              "key": "student_id",
+              "value": "s1",
+              "type": "text"
+            },
+            {
+              "key": "assignment_id",
+              "value": "hw1",
+              "type": "text"
+            },
+            {
+              "key": "file",
+              "type": "file",
+              "src": []
+            }
+          ]
+        },
+        "url": {
+          "raw": "{{baseUrl}}/works",
+          "host": ["{{baseUrl}}"],
+          "path": ["works"]
+        }
+      }
+    },
+    {
+      "name": "Get Work",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/works/1",
+          "host": ["{{baseUrl}}"],
+          "path": ["works", "1"]
+        }
+      }
+    },
+    {
+      "name": "Get Wordcloud URL",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/works/1/wordcloud",
+          "host": ["{{baseUrl}}"],
+          "path": ["works", "1", "wordcloud"]
+        }
+      }
+    }
+  ],
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:8080"
+    }
+  ]
+}
+
+
