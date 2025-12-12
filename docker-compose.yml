@@ -1,0 +1,85 @@
+
+services:
+  rabbitmq:
+    image: rabbitmq:3-management
+    container_name: rabbitmq
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+
+  postgres-orders:
+    image: postgres:15
+    container_name: postgres-orders
+    environment:
+      POSTGRES_DB: orders
+      POSTGRES_USER: user
+      POSTGRES_PASSWORD: pass
+    ports:
+      - "5432:5432"
+    volumes:
+      - ./orders-service/init:/docker-entrypoint-initdb.d
+      - postgres_orders_data:/var/lib/postgresql/data
+
+  postgres-payments:
+    image: postgres:15
+    container_name: postgres-payments
+    environment:
+      POSTGRES_DB: payments
+      POSTGRES_USER: user
+      POSTGRES_PASSWORD: pass
+    ports:
+      - "5433:5432"
+    volumes:
+      - ./payments-service/init:/docker-entrypoint-initdb.d
+      - postgres_payments_data:/var/lib/postgresql/data
+
+  orders-service:
+    build:
+      context: ./orders-service
+      dockerfile: Dockerfile
+    container_name: orders-service
+    ports:
+      - "8080:8080"
+    environment:
+      DB_URL: "postgres://user:pass@postgres-orders:5432/orders?sslmode=disable"
+      RABBITMQ_URL: "amqp://guest:guest@rabbitmq:5672/"
+      PORT: "8080"
+    depends_on:
+      - postgres-orders
+      - rabbitmq
+    restart: unless-stopped
+
+  payments-service:
+    build:
+      context: ./payments-service
+      dockerfile: Dockerfile
+    container_name: payments-service
+    ports:
+      - "8081:8081"
+    environment:
+      DB_URL: "postgres://user:pass@postgres-payments:5432/payments?sslmode=disable"
+      RABBITMQ_URL: "amqp://guest:guest@rabbitmq:5672/"
+      PORT: "8081"
+    depends_on:
+      - postgres-payments
+      - rabbitmq
+    restart: unless-stopped
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: frontend
+    ports:
+      - "3000:80"
+    depends_on:
+      - orders-service
+      - payments-service
+    restart: unless-stopped
+
+volumes:
+  rabbitmq_data:
+  postgres_orders_data:
+  postgres_payments_data:

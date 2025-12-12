@@ -1,0 +1,450 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gozon Shop</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .header {
+            text-align: center;
+            color: white;
+            margin-bottom: 30px;
+        }
+
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+
+        .card {
+            background: white;
+            border-radius: 10px;
+            padding: 25px;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        .card h2 {
+            margin-bottom: 20px;
+            color: #333;
+            border-bottom: 2px solid #667eea;
+            padding-bottom: 10px;
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 5px;
+            color: #555;
+            font-weight: 500;
+        }
+
+        input {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 14px;
+        }
+
+        button {
+            background: #667eea;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 500;
+            transition: background 0.3s;
+        }
+
+        button:hover {
+            background: #5568d3;
+        }
+
+        button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+
+        .balance-display {
+            font-size: 24px;
+            font-weight: bold;
+            color: #667eea;
+            margin-top: 10px;
+        }
+
+        .orders-list {
+            max-height: 400px;
+            overflow-y: auto;
+        }
+
+        .order-item {
+            padding: 15px;
+            border: 1px solid #eee;
+            border-radius: 5px;
+            margin-bottom: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .order-status {
+            padding: 5px 10px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: bold;
+        }
+
+        .status-pending {
+            background: #ffc107;
+            color: #000;
+        }
+
+        .status-paid {
+            background: #28a745;
+            color: white;
+        }
+
+        .status-failed {
+            background: #dc3545;
+            color: white;
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+        }
+
+        .notification {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 15px 20px;
+            background: #28a745;
+            color: white;
+            border-radius: 5px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            display: none;
+            z-index: 1000;
+        }
+
+        .notification.show {
+            display: block;
+            animation: slideIn 0.3s ease-out;
+        }
+
+        @keyframes slideIn {
+            from {
+                transform: translateX(400px);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🛒 Gozon Shop</h1>
+            <p>Микросервисный интернет-магазин</p>
+        </div>
+
+        <div class="grid">
+            <div class="card">
+                <h2>💳 Управление счетом</h2>
+                <div class="form-group">
+                    <label>User ID:</label>
+                    <input type="text" id="userId" placeholder="Введите User ID" value="123">
+                </div>
+                <button onclick="createAccount()">Создать счет</button>
+                <button onclick="topupAccount()" style="margin-top: 10px;">Пополнить счет</button>
+                <div class="balance-display" id="balance">Баланс: -</div>
+                <button onclick="getBalance()" style="margin-top: 10px;">Обновить баланс</button>
+            </div>
+
+            <div class="card">
+                <h2>📦 Создание заказа</h2>
+                <div class="form-group">
+                    <label>User ID:</label>
+                    <input type="text" id="orderUserId" placeholder="Введите User ID" value="123">
+                </div>
+                <div class="form-group">
+                    <label>Сумма заказа:</label>
+                    <input type="number" id="orderAmount" placeholder="Введите сумму" value="500">
+                </div>
+                <button onclick="createOrder()">Создать заказ</button>
+                <div id="orderResult" style="margin-top: 15px;"></div>
+            </div>
+        </div>
+
+        <div class="card">
+            <h2>📋 Мои заказы</h2>
+            <div class="form-group">
+                <label>User ID:</label>
+                <input type="text" id="listUserId" placeholder="Введите User ID" value="123" style="width: 200px; display: inline-block;">
+                <button onclick="loadOrders()" style="margin-left: 10px;">Загрузить заказы</button>
+            </div>
+            <div class="orders-list" id="ordersList"></div>
+        </div>
+    </div>
+
+    <div class="notification" id="notification"></div>
+
+    <script>
+        const ORDERS_API = 'http://localhost:8080';
+        const PAYMENTS_API = 'http://localhost:8081';
+
+        function showNotification(message) {
+            const notif = document.getElementById('notification');
+            notif.textContent = message;
+            notif.classList.add('show');
+            setTimeout(() => {
+                notif.classList.remove('show');
+            }, 3000);
+        }
+
+        async function createAccount() {
+            const userId = document.getElementById('userId').value;
+            if (!userId) {
+                showNotification('Введите User ID');
+                return;
+            }
+            try {
+                const response = await fetch(`${PAYMENTS_API}/accounts`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ user_id: userId })
+                });
+                if (!response.ok) {
+                    const errorText = await response.text();
+                    console.error('Create account error:', response.status, errorText);
+                    showNotification('Ошибка: ' + errorText);
+                    return;
+                }
+                const data = await response.json();
+                console.log('Create account response:', data);
+                showNotification('Счет создан успешно!');
+                setTimeout(() => getBalance(), 500);
+            } catch (error) {
+                console.error('Create account exception:', error);
+                showNotification('Ошибка: ' + error.message);
+            }
+        }
+
+        async function topupAccount() {
+            const userId = document.getElementById('userId').value;
+            if (!userId) {
+                showNotification('Введите User ID');
+                return;
+            }
+            const amount = prompt('Введите сумму для пополнения:', '1000');
+            if (!amount) return;
+
+            try {
+                const response = await fetch(`${PAYMENTS_API}/accounts/${userId}/topup`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ amount: parseFloat(amount) })
+                });
+                if (!response.ok) {
+                    const errorText = await response.text();
+                    console.error('Topup error:', response.status, errorText);
+                    showNotification('Ошибка: ' + errorText);
+                    return;
+                }
+                const data = await response.json();
+                console.log('Topup response:', data);
+                showNotification(`Счет пополнен на ${amount} руб.`);
+                setTimeout(() => getBalance(), 500);
+            } catch (error) {
+                console.error('Topup exception:', error);
+                showNotification('Ошибка: ' + error.message);
+            }
+        }
+
+        async function getBalance() {
+            const userId = document.getElementById('userId').value;
+            if (!userId) {
+                document.getElementById('balance').textContent = 'Баланс: введите User ID';
+                return;
+            }
+            try {
+                console.log('Fetching balance for user:', userId);
+                const url = `${PAYMENTS_API}/accounts/${userId}/balance`;
+                console.log('Balance URL:', url);
+                const response = await fetch(url);
+                console.log('Balance response status:', response.status);
+                if (!response.ok) {
+                    const errorText = await response.text();
+                    console.error('Balance fetch error:', response.status, errorText);
+                    document.getElementById('balance').textContent = 'Баланс: ошибка (' + response.status + ')';
+                    return;
+                }
+                const data = await response.json();
+                console.log('Balance data:', data);
+                if (data && data.balance !== undefined && data.balance !== null) {
+                    document.getElementById('balance').textContent = `Баланс: ${data.balance} руб.`;
+                } else {
+                    document.getElementById('balance').textContent = 'Баланс: данные не получены';
+                    console.error('Invalid balance data:', data);
+                }
+            } catch (error) {
+                console.error('Balance fetch exception:', error);
+                document.getElementById('balance').textContent = 'Баланс: ошибка загрузки - ' + error.message;
+            }
+        }
+
+        async function createOrder() {
+            const userId = document.getElementById('orderUserId').value;
+            const amount = document.getElementById('orderAmount').value;
+            const resultDiv = document.getElementById('orderResult');
+
+            if (!userId || !amount) {
+                resultDiv.innerHTML = '<span style="color: red;">Заполните все поля</span>';
+                return;
+            }
+
+            try {
+                const response = await fetch(`${ORDERS_API}/orders`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        user_id: userId,
+                        amount: parseFloat(amount),
+                        items: []
+                    })
+                });
+                if (!response.ok) {
+                    const errorText = await response.text();
+                    resultDiv.innerHTML = '<span style="color: red;">Ошибка: ' + errorText + '</span>';
+                    return;
+                }
+                const data = await response.json();
+                resultDiv.innerHTML = `
+                    <strong>Заказ создан!</strong><br>
+                    ID заказа: ${data.order_id}<br>
+                    Статус: <span class="order-status status-pending">${data.status}</span>
+                `;
+                showNotification('Заказ создан! Отслеживание статуса...');
+                
+                connectWebSocket(data.order_id);
+                
+                setTimeout(() => loadOrders(), 1000);
+            } catch (error) {
+                resultDiv.innerHTML = '<span style="color: red;">Ошибка: ' + error.message + '</span>';
+            }
+        }
+
+        async function loadOrders() {
+            const userId = document.getElementById('listUserId').value;
+            const ordersList = document.getElementById('ordersList');
+
+            if (!userId) {
+                ordersList.innerHTML = '<p>Введите User ID</p>';
+                return;
+            }
+
+            try {
+                const response = await fetch(`${ORDERS_API}/orders?user_id=${userId}`);
+                if (!response.ok) {
+                    const errorText = await response.text();
+                    console.error('Load orders error:', response.status, errorText);
+                    ordersList.innerHTML = '<p style="color: red;">Ошибка загрузки заказов (код: ' + response.status + ')</p>';
+                    return;
+                }
+                const orders = await response.json();
+                console.log('Orders response:', orders);
+                
+                if (!Array.isArray(orders)) {
+                    console.error('Orders is not an array:', orders);
+                    ordersList.innerHTML = '<p>Заказов нет</p>';
+                    return;
+                }
+                
+                if (orders.length === 0) {
+                    ordersList.innerHTML = '<p style="color: #666; font-style: italic;">Заказов нет</p>';
+                    return;
+                }
+
+                ordersList.innerHTML = orders.map(order => {
+                    const status = order.status || 'UNKNOWN';
+                    const statusLower = status.toLowerCase();
+                    const createdDate = order.created ? new Date(order.created).toLocaleString('ru-RU') : 'N/A';
+                    return `
+                    <div class="order-item">
+                        <div>
+                            <strong>Заказ #${order.id || 'N/A'}</strong><br>
+                            Сумма: ${order.amount || 0} руб.<br>
+                            Дата: ${createdDate}
+                        </div>
+                        <span class="order-status status-${statusLower}">${status}</span>
+                    </div>
+                `;
+                }).join('');
+            } catch (error) {
+                console.error('Load orders exception:', error);
+                ordersList.innerHTML = '<p style="color: red;">Ошибка загрузки заказов: ' + error.message + '</p>';
+            }
+        }
+
+        function connectWebSocket(orderId) {
+            const ws = new WebSocket(`ws://localhost:8080/ws/orders/${orderId}`);
+            
+            ws.onopen = () => {
+                console.log('WebSocket connected');
+            };
+
+            ws.onmessage = (event) => {
+                const data = JSON.parse(event.data);
+                showNotification(`Заказ #${orderId}: статус изменен на ${data.status}`);
+                loadOrders();
+            };
+
+            ws.onerror = (error) => {
+                console.error('WebSocket error:', error);
+            };
+
+            ws.onclose = () => {
+                console.log('WebSocket closed');
+            };
+        }
+
+        window.onload = () => {
+            const userId = document.getElementById('userId').value;
+            if (userId) {
+                getBalance();
+            }
+            loadOrders();
+            setInterval(loadOrders, 5000);
+        };
+    </script>
+</body>
+</html>
+

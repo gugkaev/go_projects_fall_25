@@ -1,0 +1,215 @@
+openapi: 3.0.0
+info:
+  title: Gozon Shop API
+  description: Микросервисы интернет-магазина Гоzон
+  version: 1.0.0
+servers:
+  - url: http://localhost:8080
+    description: Orders Service
+  - url: http://localhost:8081
+    description: Payments Service
+
+paths:
+  /accounts:
+    post:
+      tags:
+        - Payments
+      summary: Создать счет пользователя
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - user_id
+              properties:
+                user_id:
+                  type: string
+                  example: "123"
+      responses:
+        '201':
+          description: Счет создан
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  user_id:
+                    type: string
+                  balance:
+                    type: number
+                    format: float
+
+  /accounts/{user_id}/topup:
+    post:
+      tags:
+        - Payments
+      summary: Пополнить счет
+      parameters:
+        - name: user_id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - amount
+              properties:
+                amount:
+                  type: number
+                  format: float
+                  example: 1000
+                idempotency_key:
+                  type: string
+                  example: "topup-123-001"
+      responses:
+        '200':
+          description: Счет пополнен
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  user_id:
+                    type: string
+                  balance:
+                    type: number
+                    format: float
+
+  /accounts/{user_id}/balance:
+    get:
+      tags:
+        - Payments
+      summary: Получить баланс
+      parameters:
+        - name: user_id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Баланс получен
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  user_id:
+                    type: string
+                  balance:
+                    type: number
+                    format: float
+
+  /orders:
+    post:
+      tags:
+        - Orders
+      summary: Создать заказ
+      description: Создает заказ и асинхронно запускает процесс оплаты
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - user_id
+                - amount
+              properties:
+                user_id:
+                  type: string
+                  example: "123"
+                amount:
+                  type: number
+                  format: float
+                  example: 500
+                items:
+                  type: array
+                  items:
+                    type: object
+      responses:
+        '202':
+          description: Заказ создан, обработка начата
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  order_id:
+                    type: integer
+                  status:
+                    type: string
+                    enum: [PENDING]
+                    example: PENDING
+
+    get:
+      tags:
+        - Orders
+      summary: Получить список заказов
+      parameters:
+        - name: user_id
+          in: query
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Список заказов
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    id:
+                      type: integer
+                    user_id:
+                      type: string
+                    amount:
+                      type: number
+                      format: float
+                    status:
+                      type: string
+                      enum: [PENDING, PAID, FAILED]
+                    created:
+                      type: string
+                      format: date-time
+
+  /orders/{order_id}:
+    get:
+      tags:
+        - Orders
+      summary: Получить информацию о заказе
+      parameters:
+        - name: order_id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Информация о заказе
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  order_id:
+                    type: integer
+                  status:
+                    type: string
+                    enum: [PENDING, PAID, FAILED]
+                  amount:
+                    type: number
+                    format: float
+        '404':
+          description: Заказ не найден
+
